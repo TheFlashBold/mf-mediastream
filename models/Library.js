@@ -1,4 +1,4 @@
-const {registerModel, Schema} = require('mf-downloader');
+const {registerModel, Schema} = require('mf-database');
 
 const schema = new Schema({
     title: {
