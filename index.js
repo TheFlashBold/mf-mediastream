@@ -9,6 +9,27 @@ const {model: CollectionModel} = require('./models/Collection');
 const {model: LibraryModel} = require('./models/Library');
 const {model: MediaModel} = require('./models/Media');
 
+const parameterMapping = {
+    //'start': 'seekInput',
+    'size': 'size',
+    'audioCodec': 'audioCodec',
+    'audioBitrate': 'audioBitrate',
+    'audioChannels': 'audioChannels',
+    'videoCodec': 'videoCodec',
+    'videoBitrate': 'videoBitrate',
+    'inputOptions': 'inputOptions',
+    'outputOptions': 'outputOptions',
+    'format': 'toFormat'
+};
+
+async function getMeta(file) {
+    return new Promise((resolve) => {
+        ffmpeg.ffprobe(file, function (err, metadata) {
+            resolve(metadata);
+        });
+    });
+}
+
 /**
  * @type VideoStreamModule
  */
@@ -67,62 +88,69 @@ class VideoStreamModule extends Module {
     }
 
     async streamMedia(id, options) {
-        const {start, original, videoCodec, videoBitrate, audioBitrate, size, outputOptions, format} = options;
+        let {start, original, format, videoBitrate, audioBitrate} = options;
         const media = await MediaModel.findOne({_id: id});
-        const fileStream = fs.createReadStream(media.fullPath);
+        let {size: fileSize} = fs.statSync(media.fullPath);
 
-        const processingPipeline = ffmpeg(fileStream);
-        if (start) {
-            processingPipeline.seekInput(start);
-        }
-        if (!original) {
-            if (videoCodec) {
-                processingPipeline.videoCodec(videoCodec);
+        let processingPipeline;
+        if (original) {
+            processingPipeline = fs.createReadStream(media.fullPath);
+        } else {
+            const {format: {duration}} = await getMeta(media.fullPath);
+            processingPipeline = ffmpeg(media.fullPath);
+            processingPipeline.on('start', function (commandLine) {
+                console.log('Spawned Ffmpeg with command: ' + commandLine);
+            });
+            //processingPipeline.native();
+            for (const [property, value] of Object.entries(options)) {
+                if (parameterMapping[property]) {
+                    processingPipeline[parameterMapping[property]](value);
+                }
             }
-            if (videoBitrate) {
-                processingPipeline.videoBitrate(videoBitrate);
-            }
-            if (audioBitrate) {
-                processingPipeline.audioBitrate(audioBitrate);
-            }
-            if (size) {
-                processingPipeline.size(size);
-            }
-            if (outputOptions) {
-                processingPipeline.outputOptions(outputOptions);
-            }
-            if (format) {
-                processingPipeline.toFormat(format)
+
+            if (videoBitrate && audioBitrate) {
+                const combinedBitrate = (videoBitrate + audioBitrate) * 1000;
+                fileSize = duration * combinedBitrate;
+                if (start) {
+                    console.log(start / combinedBitrate);
+                    processingPipeline.seekInput(start / combinedBitrate);
+                }
             }
         }
 
         return {
-            processingPipeline,
-            fileName: media.get("title"),
-            fileType: format || "",
-            fileSize: ""
+            mediaStream: processingPipeline,
+            fileName: media.get('title'),
+            fileType: format || '',
+            fileSize: fileSize,
+            rangeFrom: start || 0
         }
     }
 
     async streamHandler(ctx, next) {
         const preset = this.config.get("presets." + ctx.params.preset);
-        if (ctx.query.start) {
-            preset.start = ctx.query.start;
+        if (ctx.get('Range')) {
+            preset.start = parseInt(ctx.get('Range').replace(/[^0-9]/g, ''));
         }
-        const {mediaStream, fileType, fileSize} = await this.streamMedia(ctx.params.mediaId, preset);
 
-        ctx.type = fileType;
+        const {mediaStream, fileType, fileSize, rangeFrom} = await this.streamMedia(ctx.params.mediaId, preset);
+
+        ctx.type = 'video/' + fileType;
         ctx.body = stream.PassThrough();
         ctx.length = fileSize;
+        ctx.set('Accept-Ranges', 'bytes');
+        ctx.set('Content-Range', 'bytes ' + rangeFrom + '-' + fileSize);
 
-        mediaStream.pipe(ctx.body, {end: true});
-        mediaStream.on("error", (error) => {
-            console.error(error);
+        mediaStream.on("error", (err, stdout, stderr) => {
+            console.log('Error: ' + err.message);
+            /*console.log('ffmpeg output:\n' + stdout);
+            console.log('ffmpeg stderr:\n' + stderr);*/
             next();
         });
         mediaStream.on("end", () => {
             next();
         });
+        mediaStream.pipe(ctx.body, {end: true});
     }
 }
 
