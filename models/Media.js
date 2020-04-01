@@ -15,7 +15,8 @@ const schema = new Schema({
         type: String
     },
     library: {
-        type: String
+        type: Types.ObjectId,
+        ref: 'library'
     },
     info: {
         type: Types.Mixed

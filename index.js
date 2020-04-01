@@ -67,29 +67,48 @@ class VideoStreamModule extends Module {
     }
 
     async streamMedia(id, options) {
+        const {start, original, videoCodec, videoBitrate, audioBitrate, size, outputOptions, format} = options;
         const media = await MediaModel.findOne({_id: id});
         const fileStream = fs.createReadStream(media.fullPath);
 
-        const mediaStream = ffmpeg(fileStream)
-            //.seekInput(options.start || 0)
-            .videoCodec("libvpx-vp9")
-            .videoBitrate(options.videoBitrate, true)
-            .audioBitrate(options.audioBitrate, true)
-            .size(options.size)
-            .outputOptions("-row-mt 1")
-            .toFormat("webm");
+        const processingPipeline = ffmpeg(fileStream);
+        if (start) {
+            processingPipeline.seekInput(start);
+        }
+        if (!original) {
+            if (videoCodec) {
+                processingPipeline.videoCodec(videoCodec);
+            }
+            if (videoBitrate) {
+                processingPipeline.videoBitrate(videoBitrate);
+            }
+            if (audioBitrate) {
+                processingPipeline.audioBitrate(audioBitrate);
+            }
+            if (size) {
+                processingPipeline.size(size);
+            }
+            if (outputOptions) {
+                processingPipeline.outputOptions(outputOptions);
+            }
+            if (format) {
+                processingPipeline.toFormat(format)
+            }
+        }
 
         return {
-            mediaStream,
+            processingPipeline,
             fileName: media.get("title"),
-            fileType: "webm",
-            fileSize: media.get("info.format.size")
+            fileType: format || "",
+            fileSize: ""
         }
     }
 
     async streamHandler(ctx, next) {
         const preset = this.config.get("presets." + ctx.params.preset);
-        //preset.start = ctx.query.start;
+        if (ctx.query.start) {
+            preset.start = ctx.query.start;
+        }
         const {mediaStream, fileType, fileSize} = await this.streamMedia(ctx.params.mediaId, preset);
 
         ctx.type = fileType;

@@ -10,11 +10,12 @@ const schema = new Schema({
         type: String
     },
     medias: [{
-        type: MediaSchema
+        type: Types.ObjectId,
+        ref: 'media'
     }],
     library: {
         type: Types.ObjectId,
-        ref: "Library"
+        ref: 'library'
     },
     info: {
         title: {
