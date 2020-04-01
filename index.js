@@ -19,7 +19,7 @@ class VideoStreamModule extends Module {
 
     async postInit() {
         WebServer.registerRoute("/stream/:mediaId/:preset", this.streamHandler.bind(this));
-        // await this.loadLibraries();
+        this.loadLibraries();
     }
 
     async loadLibraries() {

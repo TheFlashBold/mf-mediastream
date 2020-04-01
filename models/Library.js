@@ -1,4 +1,4 @@
-const {registerModel, Schema, Types} = require("../../database");
+const {registerModel, Schema} = require('mf-downloader');
 
 const schema = new Schema({
     title: {
@@ -6,13 +6,13 @@ const schema = new Schema({
     },
     type: {
         type: String,
-        enum: ["movies", "series", "books", "videos", "photos"]
+        enum: ['movies', 'series', 'books', 'videos', 'photos']
     },
     path: {
         type: String
     }
 });
-const model = registerModel("library", schema);
+const model = registerModel('library', schema);
 
 module.exports = {
     model: model,

@@ -1,5 +1,5 @@
-const {registerModel, Schema, Types} = require("../../database");
-const ffmpeg = require("fluent-ffmpeg");
+const {registerModel, Schema, Types} = require('mf-database');
+const ffmpeg = require('fluent-ffmpeg');
 
 const schema = new Schema({
     title: {
@@ -21,6 +21,7 @@ const schema = new Schema({
         type: Types.Mixed
     }
 });
+
 schema.method.getInfo = async function (forceNew = false) {
     if (!forceNew && this.info) {
         return this.info;
@@ -36,6 +37,7 @@ schema.method.getInfo = async function (forceNew = false) {
         });
     });
 };
+
 const model = registerModel("media", schema);
 
 module.exports = {

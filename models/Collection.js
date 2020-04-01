@@ -1,9 +1,9 @@
-const {registerModel, Schema, Types} = require("../../database");
-const request = require("request-promise");
-const path = require("path");
-const fs = require("fs");
-const {schema: MediaSchema} = require("./Media");
-const {model: LibraryModel} = require("./Library");
+const {registerModel, Schema, Types} = require('mf-database');
+const {model: LibraryModel} = require('./Library');
+const {schema: MediaSchema} = require('./Media');
+const {Modules: {request}} = require('mf-lib');
+const path = require('path');
+const fs = require('fs');
 
 const schema = new Schema({
     title: {
@@ -31,6 +31,7 @@ const schema = new Schema({
         }
     }
 });
+
 schema.methods.getInfo = async function (forceNew = false) {
     if (!forceNew && this.get("info.title")) {
         return this.info;
@@ -76,7 +77,8 @@ schema.methods.getInfo = async function (forceNew = false) {
     }
     await this.save();
 };
-const model = registerModel("collection", schema);
+
+const model = registerModel('collection', schema);
 
 module.exports = {
     schema: schema,
