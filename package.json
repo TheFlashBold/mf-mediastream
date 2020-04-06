@@ -1,15 +1,18 @@
 {
-  "name": "mf-mediastream",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "fluent-ffmpeg": "^2.1.2"
-  }
+    "name": "mf-mediastream",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "fluent-ffmpeg": "^2.1.2",
+        "mf-lib": "git+https://github.com/TheFlashBold/mf-lib.git",
+        "mf-webserver": "git+https://github.com/TheFlashBold/mf-webserver.git",
+        "mf-database": "git+https://github.com/TheFlashBold/mf-database.git"
+    }
 }

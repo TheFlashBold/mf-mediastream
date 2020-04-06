@@ -1,20 +1,16 @@
-const {registerModel, Schema} = require('mf-database');
+const mongoose = require('mongoose');
 
-const schema = new Schema({
-    title: {
-        type: String
-    },
-    type: {
-        type: String,
-        enum: ['movies', 'series', 'books', 'videos', 'photos']
-    },
-    path: {
-        type: String
-    }
-});
-const model = registerModel('library', schema);
-
-module.exports = {
-    model: model,
-    schema: schema
+module.exports = function (app) {
+    return new mongoose.Schema({
+        title: {
+            type: String
+        },
+        type: {
+            type: String,
+            enum: ['movies', 'series', 'books', 'videos', 'photos']
+        },
+        path: {
+            type: String
+        }
+    });
 };
